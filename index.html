@@ -1,0 +1,934 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KickOn — Gestion de club de football amateur</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:ital,wght@0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --green: #1DB954;
+    --green-dim: #158A3C;
+    --green-glow: rgba(29,185,84,0.15);
+    --bg: #090D12;
+    --card: #111820;
+    --card2: #161E28;
+    --border: #1E2A38;
+    --text: #E8EDF2;
+    --muted: #6B7A8D;
+    --white: #FFFFFF;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE OVERLAY ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 clamp(1.5rem, 5vw, 4rem);
+    height: 64px;
+    background: rgba(9,13,18,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.8rem;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .logo span { color: var(--green); }
+
+  .lang-switcher {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .lang-btn {
+    background: none;
+    border: 1px solid transparent;
+    color: var(--muted);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.6rem;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+  }
+  .lang-btn:hover, .lang-btn.active {
+    color: var(--green);
+    border-color: var(--border);
+    background: var(--card);
+  }
+
+  nav .cta-nav {
+    background: var(--green);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.5rem 1.2rem;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background 0.2s, transform 0.1s;
+  }
+  nav .cta-nav:hover { background: #25d160; transform: translateY(-1px); }
+
+  /* ── HERO ── */
+  .hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 8rem clamp(1.5rem, 5vw, 4rem) 5rem;
+    overflow: hidden;
+  }
+
+  /* Grid background */
+  .hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(29,185,84,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(29,185,84,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 40%, black 30%, transparent 80%);
+    pointer-events: none;
+  }
+
+  /* Glow orb */
+  .hero-glow {
+    position: absolute;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(29,185,84,0.12) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -55%);
+    pointer-events: none;
+  }
+
+  .hero-content {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .hero-eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(29,185,84,0.1);
+    border: 1px solid rgba(29,185,84,0.25);
+    color: var(--green);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 0.35rem 0.9rem;
+    border-radius: 100px;
+    margin-bottom: 2rem;
+    animation: fadeUp 0.6s ease both;
+  }
+  .eyebrow-dot {
+    width: 6px; height: 6px;
+    background: var(--green);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  .hero h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(3.5rem, 9vw, 8rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    text-transform: uppercase;
+    color: var(--white);
+    margin-bottom: 1.5rem;
+    animation: fadeUp 0.6s ease 0.1s both;
+  }
+
+  .hero h1 .accent { color: var(--green); }
+  .hero h1 .line2 {
+    display: block;
+    color: var(--muted);
+    font-style: italic;
+    font-weight: 700;
+	margin-top: 40px;
+  }
+
+  .hero-sub {
+    font-size: clamp(1rem, 2vw, 1.2rem);
+    color: var(--muted);
+    max-width: 560px;
+    line-height: 1.7;
+    margin-bottom: 2.5rem;
+    animation: fadeUp 0.6s ease 0.2s both;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 4rem;
+    animation: fadeUp 0.6s ease 0.3s both;
+  }
+
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.85rem 2rem;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+    box-shadow: 0 0 30px rgba(29,185,84,0.3);
+  }
+  .btn-primary:hover {
+    background: #25d160;
+    transform: translateY(-2px);
+    box-shadow: 0 0 40px rgba(29,185,84,0.5);
+  }
+
+  .btn-secondary {
+    background: transparent;
+    color: var(--text);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 0.85rem 2rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.2s;
+  }
+  .btn-secondary:hover {
+    border-color: var(--green);
+    color: var(--green);
+    transform: translateY(-2px);
+  }
+
+  /* Stats bar */
+  .hero-stats {
+    display: flex;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+    animation: fadeUp 0.6s ease 0.4s both;
+  }
+  .stat-item { display: flex; flex-direction: column; }
+  .stat-num {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 2rem;
+    color: var(--white);
+    line-height: 1;
+  }
+  .stat-num span { color: var(--green); }
+  .stat-label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-top: 0.2rem;
+  }
+  .stat-divider {
+    width: 1px;
+    background: var(--border);
+    align-self: stretch;
+  }
+
+  /* ── FEATURES ── */
+  .features {
+    position: relative;
+    padding: 7rem clamp(1.5rem, 5vw, 4rem);
+  }
+
+  .section-label {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.78rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--green);
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: clamp(2.2rem, 5vw, 4rem);
+    text-transform: uppercase;
+    line-height: 0.95;
+    color: var(--white);
+    margin-bottom: 1rem;
+  }
+
+  .section-sub {
+    color: var(--muted);
+    font-size: 1.05rem;
+    max-width: 520px;
+    line-height: 1.7;
+    margin-bottom: 4rem;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5px;
+    background: var(--border);
+    border: 1.5px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .feature-card {
+    background: var(--card);
+    padding: 2.5rem;
+    position: relative;
+    overflow: hidden;
+    transition: background 0.3s;
+    cursor: default;
+  }
+  .feature-card:hover {
+    background: var(--card2);
+  }
+  .feature-card:hover .feature-glow {
+    opacity: 1;
+  }
+
+  .feature-glow {
+    position: absolute;
+    top: -40px; left: -40px;
+    width: 200px; height: 200px;
+    background: radial-gradient(circle, rgba(29,185,84,0.08), transparent 70%);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .feature-icon {
+    width: 44px; height: 44px;
+    background: rgba(29,185,84,0.1);
+    border: 1px solid rgba(29,185,84,0.2);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.3rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .feature-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 1.15rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--white);
+    margin-bottom: 0.6rem;
+  }
+
+  .feature-desc {
+    font-size: 0.9rem;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  .feature-tag {
+    display: inline-block;
+    margin-top: 1rem;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 600;
+    font-size: 0.72rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--green);
+    background: rgba(29,185,84,0.08);
+    border: 1px solid rgba(29,185,84,0.15);
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  /* ── HIGHLIGHT BAND ── */
+  .highlight-band {
+    margin: 0 clamp(1.5rem, 5vw, 4rem);
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 3rem clamp(2rem, 5vw, 4rem);
+    display: flex;
+    align-items: center;
+    gap: 3rem;
+    flex-wrap: wrap;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .highlight-band::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+    background: linear-gradient(to bottom, var(--green), var(--green-dim));
+    border-radius: 4px 0 0 4px;
+  }
+
+  .highlight-quote {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .quote-text {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    color: var(--white);
+    line-height: 1.2;
+    margin-bottom: 0.75rem;
+  }
+  .quote-text em { color: var(--green); font-style: normal; }
+
+  .quote-author {
+    font-size: 0.85rem;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .highlight-pills {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    flex-shrink: 0;
+  }
+
+  .pill {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-size: 0.88rem;
+    color: var(--text);
+  }
+  .pill-dot {
+    width: 8px; height: 8px;
+    background: var(--green);
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* ── CTA SECTION ── */
+  .cta-section {
+    padding: 7rem clamp(1.5rem, 5vw, 4rem);
+    text-align: center;
+    position: relative;
+  }
+
+  .cta-glow {
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 800px; height: 400px;
+    background: radial-gradient(ellipse, rgba(29,185,84,0.08) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .cta-section .section-title {
+    margin: 0 auto 1rem;
+    max-width: 700px;
+  }
+  .cta-section .section-sub {
+    margin: 0 auto 2.5rem;
+    text-align: center;
+    max-width: 500px;
+  }
+
+  .cta-form {
+    display: flex;
+    gap: 0.75rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .cta-input {
+    background: var(--card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'Barlow', sans-serif;
+    font-size: 0.95rem;
+    padding: 0.85rem 1.25rem;
+    border-radius: 8px;
+    outline: none;
+    width: 280px;
+    transition: border-color 0.2s;
+  }
+  .cta-input::placeholder { color: var(--muted); }
+  .cta-input:focus { border-color: var(--green); }
+
+  .cta-note {
+    font-size: 0.82rem;
+    color: var(--muted);
+    position: relative;
+    z-index: 1;
+  }
+  .cta-note a { color: var(--green); text-decoration: none; }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--border);
+    padding: 2rem clamp(1.5rem, 5vw, 4rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .footer-logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 900;
+    font-size: 1.3rem;
+    color: var(--white);
+    text-decoration: none;
+  }
+    /* Limite la largeur du logo KickOn.svg */
+    img[src$="KickOn.svg"] {
+      max-width: 160px;
+      height: auto;
+      display: inline-block;
+    }
+  .footer-logo span { color: var(--green); }
+
+  .footer-copy {
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 1.5rem;
+  }
+  .footer-links a {
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--green); }
+
+  /* ── ANIMATIONS ── */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .stat-divider { display: none; }
+    .hero-stats { gap: 1.5rem; }
+    nav .cta-nav { display: none; }
+    .cta-form { flex-direction: column; align-items: center; }
+    .cta-input { width: 100%; max-width: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="logo"><img src="KickOn.svg" /></a>
+  <div class="lang-switcher">
+    <button class="lang-btn active" onclick="setLang('fr')">FR</button>
+    <button class="lang-btn" onclick="setLang('nl')">NL</button>
+    <button class="lang-btn" onclick="setLang('en')">EN</button>
+  </div>
+  <a href="#contact" class="cta-nav" data-i18n="nav_cta">Tester KickOn</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-content">
+
+    <div class="hero-eyebrow">
+      <span class="eyebrow-dot"></span>
+      <span data-i18n="eyebrow">Phase bêta ouverte — Clubs ACFF & VV</span>
+    </div>
+
+    <h1>
+      <span data-i18n="h1_line1">Gérez votre club.</span>
+      <span class="line2" data-i18n="h1_line2">Maîtrisez le jeu.</span>
+    </h1>
+
+    <p class="hero-sub" data-i18n="hero_sub">
+      KickOn est la plateforme de gestion complète pour le football amateur belge — du roster à l'IA, des convocations au réseau de passes.
+    </p>
+
+    <div class="hero-actions">
+      <a href="#contact" class="btn-primary">
+        <span data-i18n="cta_primary">Tester à prix réduit</span>
+        <span>→</span>
+      </a>
+      <a href="#features" class="btn-secondary">
+        <span data-i18n="cta_secondary">Voir les fonctionnalités</span>
+      </a>
+    </div>
+
+    <div class="hero-stats">
+      <div class="stat-item">
+        <div class="stat-num">1<span>re</span></div>
+        <div class="stat-label" data-i18n="stat1">Saison complète</div>
+      </div>
+      
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-num">100<span>%</span></div>
+        <div class="stat-label" data-i18n="stat3">Import RBFA</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-num"><span>30</span>s</div>
+        <div class="stat-label" data-i18n="stat4">Configuration roster</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div style="max-width:1100px;margin:0 auto;">
+    <p class="section-label reveal" data-i18n="feat_label">Fonctionnalités</p>
+    <h2 class="section-title reveal" data-i18n="feat_title">Tout ce dont<br>votre club a besoin.</h2>
+    <p class="section-sub reveal" data-i18n="feat_sub">Une seule plateforme. Du premier import au rapport de fin de saison.</p>
+
+    <div class="features-grid reveal">
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">⚡</div>
+        <div class="feature-title" data-i18n="f1_title">Import RBFA instantané</div>
+        <p class="feature-desc" data-i18n="f1_desc">Tapez le nom de votre club — équipes, joueurs et numéros fédération sont importés en 10 secondes. Calendrier de compétition inclus.</p>
+        <span class="feature-tag">ACFF & VV</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">📅</div>
+        <div class="feature-title" data-i18n="f2_title">Événements & convocations</div>
+        <p class="feature-desc" data-i18n="f2_desc">Entraînements, matchs, convocations automatiques. Les parents confirment en un tap. L'itinéraire vers le terrain adverse est intégré.</p>
+        <span class="feature-tag" data-i18n="f2_tag">Notif automatique</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">⚽</div>
+        <div class="feature-title" data-i18n="f3_title">Live Match & stats</div>
+        <p class="feature-desc" data-i18n="f3_desc">Encodage live ou après match. Position par période, temps de jeu exact, buts, passes, tirs, duels. Granularité professionnelle.</p>
+        <span class="feature-tag" data-i18n="f3_tag">Bulletproof</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">🤖</div>
+        <div class="feature-title" data-i18n="f4_title">Rapports IA individuels</div>
+        <p class="feature-desc" data-i18n="f4_desc">Chaque joueur reçoit une analyse narrative automatique — points forts, axes d'amélioration, stats contextualisées. Généré après chaque match.</p>
+        <span class="feature-tag">AI-powered</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">🕸️</div>
+        <div class="feature-title" data-i18n="f5_title">Réseau de passes</div>
+        <p class="feature-desc" data-i18n="f5_desc">Visualisez la construction du jeu — réseau de passes par postes avec fenêtre temporelle interactive. Niveau pro, pour l'amateur.</p>
+        <span class="feature-tag" data-i18n="f5_tag">Exclusif</span>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-glow"></div>
+        <div class="feature-icon">🏟️</div>
+        <div class="feature-title" data-i18n="f6_title">Gestion complète du club</div>
+        <p class="feature-desc" data-i18n="f6_desc">Effectif multi-équipes, infrastructures, encadrement, rôles et permissions. Un coordinateur voit tout. Un coach voit son équipe.</p>
+        <span class="feature-tag" data-i18n="f6_tag">Multi-équipes</span>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- HIGHLIGHT BAND -->
+<div class="highlight-band reveal">
+  <div class="highlight-quote">
+    <p class="quote-text" data-i18n="quote_text">"<em>Même prix que SportEasy.</em> Significativement plus."</p>
+    <p class="quote-author" data-i18n="quote_author">Andrea Wauthia, fondateur &amp; coach U8</p>
+  </div>
+  <div class="highlight-pills">
+    <div class="pill"><span class="pill-dot"></span><span data-i18n="pill1">Radar chart par joueur</span></div>
+    <div class="pill"><span class="pill-dot"></span><span data-i18n="pill2">Positionnement tactique automatique</span></div>
+    <div class="pill"><span class="pill-dot"></span><span data-i18n="pill3">Réseau de passes interactif</span></div>
+    <div class="pill"><span class="pill-dot"></span><span data-i18n="pill4">Rapport IA après chaque match</span></div>
+    <div class="pill"><span class="pill-dot"></span><span data-i18n="pill5">Historique saison complet</span></div>
+  </div>
+</div>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <div class="cta-glow"></div>
+  <p class="section-label reveal" data-i18n="cta_label">Phase bêta</p>
+  <h2 class="section-title reveal" data-i18n="cta_title">Rejoignez les<br>premiers clubs.</h2>
+  <p class="section-sub reveal" data-i18n="cta_sub">Tarif bêta exclusif. Accès complet. Onboarding en 10 minutes avec import RBFA.</p>
+
+  <div class="cta-form reveal">
+    <input class="cta-input" type="email" data-placeholder-i18n="cta_placeholder" placeholder="votre@club.be">
+    <a href="#" class="btn-primary">
+      <span data-i18n="cta_submit">Demander l'accès</span>
+    </a>
+  </div>
+  <p class="cta-note reveal" data-i18n="cta_note">Réponse sous 48h. Aucune carte bleue requise.</p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="footer-logo"><img src="KickOn.svg" /></span></a>
+  <p class="footer-copy">© 2026 WAT³ — KickOn. <span data-i18n="footer_made">Fait avec passion en Belgique.</span></p>
+  <div class="footer-links">
+    <a href="mailto:andrea.wauthia@gmail.com">Contact</a>
+    <a href="https://discord.gg/jkSmvAeP">Discord</a>
+    <a href="#" data-i18n="footer_privacy">Confidentialité</a>
+  </div>
+</footer>
+
+<script>
+// ── I18N ──
+const i18n = {
+  fr: {
+    nav_cta: "Rejoignez la bêta",
+    eyebrow: "Phase bêta ouverte — Clubs ACFF & VV",
+    h1_line1: "Gérez votre club.",
+    h1_line2: "Maîtrisez le jeu.",
+    hero_sub: "KickOn est la plateforme de gestion complète pour le football amateur belge — du roster à l'IA, des convocations au réseau de passes.",
+    cta_primary: "Rejoignez la bêta",
+    cta_secondary: "Voir les fonctionnalités",
+    stat1: "Saison complète", stat2: "Matchs encodés", stat3: "Import RBFA", stat4: "Configuration roster",
+    feat_label: "Fonctionnalités",
+    feat_title: "Tout ce dont\nvotre club a besoin.",
+    feat_sub: "Une seule plateforme. Du premier import au rapport de fin de saison.",
+    f1_title: "Import RBFA instantané",
+    f1_desc: "Tapez le nom de votre club — équipes, joueurs et numéros fédération importés en 10 secondes. Calendrier de compétition inclus.",
+    f2_title: "Événements & convocations",
+    f2_desc: "Entraînements, matchs, convocations automatiques. Les parents confirment en un tap. L'itinéraire vers le terrain adverse est intégré.",
+    f2_tag: "Notif automatique",
+    f3_title: "Live Match & stats",
+    f3_desc: "Encodage live ou après match. Position par période, temps de jeu exact, buts, passes, tirs, duels. Granularité professionnelle.",
+    f3_tag: "Bulletproof",
+    f4_title: "Rapports IA individuels",
+    f4_desc: "Chaque joueur reçoit une analyse narrative automatique — points forts, axes d'amélioration, stats contextualisées.",
+    f5_title: "Réseau de passes",
+    f5_desc: "Visualisez la construction du jeu — réseau de passes par postes avec fenêtre temporelle interactive. Niveau pro, pour l'amateur.",
+    f5_tag: "Exclusif",
+    f6_title: "Gestion complète du club",
+    f6_desc: "Effectif multi-équipes, infrastructures, encadrement, rôles et permissions. Un coordinateur voit tout. Un coach voit son équipe.",
+    f6_tag: "Multi-équipes",
+    quote_text: '"<em>Faire aussi bien que SportEasy.</em> En y ajoutant ce qui manque."',
+    quote_author: "Andrea Wauthia, fondateur & coach U8",
+    pill1: "Radar chart par joueur", pill2: "Positionnement tactique automatique",
+    pill3: "Réseau de passes interactif", pill4: "Rapport IA après chaque match", pill5: "Historique saison complet",
+    cta_label: "Phase bêta",
+    cta_title: "Rejoignez les\npremiers clubs.",
+    cta_sub: "Tarif bêta exclusif. Accès complet. Onboarding en 10 minutes avec import RBFA.",
+    cta_placeholder: "votre@club.be",
+    cta_submit: "Demander l'accès",
+    cta_note: "Réponse sous 48h. Aucune carte bleue requise.",
+    footer_made: "Fait avec passion en Belgique.",
+    footer_privacy: "Confidentialité",
+  },
+  nl: {
+    nav_cta: "KickOn testen",
+    eyebrow: "Bèta open — ACFF & VV clubs",
+    h1_line1: "Beheer uw club.",
+    h1_line2: "Beheers het spel.",
+    hero_sub: "KickOn is het complete beheerplatform voor Belgisch amateurvoetbal — van roster tot AI, van oproeping tot passennetwerk.",
+    cta_primary: "Sluit u aan bij de bèta",
+    cta_secondary: "Functies bekijken",
+    stat1: "Volledig seizoen", stat2: "Gecodeerde wedstrijden", stat3: "RBFA import", stat4: "Roster configuratie",
+    feat_label: "Functies",
+    feat_title: "Alles wat uw\nclub nodig heeft.",
+    feat_sub: "Één platform. Van de eerste import tot het eindrapport.",
+    f1_title: "Directe RBFA import",
+    f1_desc: "Typ uw clubnaam — teams, spelers en federatienummers geïmporteerd in 10 seconden. Competitiekalender inbegrepen.",
+    f2_title: "Evenementen & oproepingen",
+    f2_desc: "Trainingen, wedstrijden, automatische oproepingen. Ouders bevestigen met één tik. Routebeschrijving naar het uitveld inbegrepen.",
+    f2_tag: "Auto-notificatie",
+    f3_title: "Live Match & statistieken",
+    f3_desc: "Live of achteraf coderen. Positie per periode, exacte speeltijd, doelpunten, passes, schoten, duels. Professionele granulariteit.",
+    f3_tag: "Bulletproof",
+    f4_title: "Individuele AI-rapporten",
+    f4_desc: "Elke speler krijgt een automatische narratieve analyse — sterktes, verbeterpunten, gecontextualiseerde stats.",
+    f5_title: "Passennetwerk",
+    f5_desc: "Visualiseer de spelopbouw — passennetwerk per positie met interactief tijdsvenster. Pro-niveau voor amateurvoetbal.",
+    f5_tag: "Exclusief",
+    f6_title: "Volledig clubbeheer",
+    f6_desc: "Multi-team effectief, infrastructuren, staf, rollen en rechten. Een coördinator ziet alles. Een coach ziet zijn team.",
+    f6_tag: "Multi-team",
+    quote_text: '"<em>Zelfde prijs als SportEasy.</em> Significant meer."',
+    quote_author: "Andrea Wauthia, oprichter & U8-coach",
+    pill1: "Radar chart per speler", pill2: "Automatische tactische positie",
+    pill3: "Interactief passennetwerk", pill4: "AI-rapport na elke wedstrijd", pill5: "Volledig seizoensoverzicht",
+    cta_label: "Bèta fase",
+    cta_title: "Sluit u aan bij\nde eerste clubs.",
+    cta_sub: "Exclusief bètatarief. Volledige toegang. Onboarding in 10 minuten met RBFA import.",
+    cta_placeholder: "uw@club.be",
+    cta_submit: "Toegang aanvragen",
+    cta_note: "Antwoord binnen 48u. Geen creditcard vereist.",
+    footer_made: "Gemaakt met passie in België.",
+    footer_privacy: "Privacy",
+  },
+  en: {
+    nav_cta: "Try KickOn",
+    eyebrow: "Beta now open — ACFF & VV clubs",
+    h1_line1: "Manage your club.",
+    h1_line2: "Master the game.",
+    hero_sub: "KickOn is the complete management platform for Belgian amateur football — from roster to AI, from call-ups to pass networks.",
+    cta_primary: "Join the beta",
+    cta_secondary: "See features",
+    stat1: "Full season", stat2: "Matches encoded", stat3: "RBFA import", stat4: "Roster setup",
+    feat_label: "Features",
+    feat_title: "Everything your\nclub needs.",
+    feat_sub: "One platform. From first import to end-of-season report.",
+    f1_title: "Instant RBFA import",
+    f1_desc: "Type your club name — teams, players and federation numbers imported in 10 seconds. Competition calendar included.",
+    f2_title: "Events & call-ups",
+    f2_desc: "Training sessions, matches, automatic call-ups. Parents confirm with one tap. Directions to the away ground are built in.",
+    f2_tag: "Auto-notification",
+    f3_title: "Live Match & stats",
+    f3_desc: "Live or post-match encoding. Position per period, exact playing time, goals, passes, shots, duels. Professional granularity.",
+    f3_tag: "Bulletproof",
+    f4_title: "Individual AI reports",
+    f4_desc: "Every player gets an automatic narrative analysis — strengths, areas to improve, contextualised stats. Generated after every match.",
+    f5_title: "Pass network",
+    f5_desc: "Visualise how the game was built — pass network by position with interactive time window. Pro level, for amateurs.",
+    f5_tag: "Exclusive",
+    f6_title: "Full club management",
+    f6_desc: "Multi-team roster, facilities, staff, roles and permissions. A coordinator sees everything. A coach sees their team.",
+    f6_tag: "Multi-team",
+    quote_text: '"<em>Same price as SportEasy.</em> Significantly more."',
+    quote_author: "Andrea Wauthia, founder & U8 coach",
+    pill1: "Radar chart per player", pill2: "Automatic tactical positioning",
+    pill3: "Interactive pass network", pill4: "AI report after every match", pill5: "Full season history",
+    cta_label: "Beta phase",
+    cta_title: "Join the\nfirst clubs.",
+    cta_sub: "Exclusive beta pricing. Full access. Onboarding in 10 minutes with RBFA import.",
+    cta_placeholder: "your@club.be",
+    cta_submit: "Request access",
+    cta_note: "Response within 48h. No credit card required.",
+    footer_made: "Made with passion in Belgium.",
+    footer_privacy: "Privacy",
+  }
+};
+
+let currentLang = 'fr';
+
+function setLang(lang) {
+  currentLang = lang;
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent === lang.toUpperCase()));
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.dataset.i18n;
+    if (i18n[lang][key] !== undefined) {
+      el.innerHTML = i18n[lang][key];
+    }
+  });
+  document.querySelectorAll('[data-placeholder-i18n]').forEach(el => {
+    const key = el.dataset.placeholderI18n;
+    if (i18n[lang][key]) el.placeholder = i18n[lang][key];
+  });
+}
+
+// ── SCROLL REVEAL ──
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) {
+      setTimeout(() => e.target.classList.add('visible'), i * 80);
+      observer.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+</script>
+</body>
+</html>
+
